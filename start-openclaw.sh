@@ -201,6 +201,55 @@ if (process.env.SLACK_BOT_TOKEN && process.env.SLACK_APP_TOKEN) {
     };
 }
 
+// ============================================================
+// AGENTS & BINDINGS
+// ============================================================
+// dev-intake: 開発依頼のヒアリングと GitHub Issue 起票を担うエージェント
+config.agents = config.agents || {};
+config.agents.list = config.agents.list || [];
+
+const hasDevIntake = config.agents.list.some(a => a.id === 'dev-intake');
+if (!hasDevIntake) {
+    config.agents.list.push({
+        id: 'dev-intake',
+        workspace: '/root/clawd/workspace-dev-intake',
+        model: process.env.OPENCLAW_MODEL || 'anthropic/claude-sonnet-4-6',
+    });
+}
+
+// DISCORD_GUILD_ID が設定されている場合、特定 Guild の messages を dev-intake に routing
+config.bindings = config.bindings || [];
+const hasBinding = config.bindings.some(b => b.agentId === 'dev-intake');
+if (!hasBinding && process.env.DISCORD_GUILD_ID) {
+    config.bindings.push({
+        agentId: 'dev-intake',
+        match: { channel: 'discord', guildId: process.env.DISCORD_GUILD_ID },
+    });
+}
+
+// ============================================================
+// MCP SERVERS (GitHub)
+// ============================================================
+// GitHub Issue 起票に @modelcontextprotocol/server-github を使用する
+if (process.env.GITHUB_PERSONAL_ACCESS_TOKEN) {
+    config.plugins = config.plugins || {};
+    config.plugins.entries = config.plugins.entries || {};
+    config.plugins.entries.acpx = config.plugins.entries.acpx || { enabled: true, config: {} };
+    config.plugins.entries.acpx.config = config.plugins.entries.acpx.config || {};
+    config.plugins.entries.acpx.config.mcpServers = config.plugins.entries.acpx.config.mcpServers || {};
+    config.plugins.entries.acpx.config.mcpServers.github = {
+        command: 'npx',
+        args: ['-y', '@modelcontextprotocol/server-github'],
+        env: {
+            GITHUB_PERSONAL_ACCESS_TOKEN: {
+                source: 'env',
+                provider: 'default',
+                id: 'GITHUB_PERSONAL_ACCESS_TOKEN',
+            },
+        },
+    };
+}
+
 fs.writeFileSync(configPath, JSON.stringify(config, null, 2));
 console.log('Configuration patched successfully');
 EOFPATCH

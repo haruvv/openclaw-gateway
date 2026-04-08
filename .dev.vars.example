@@ -33,9 +33,18 @@ MOLTBOT_GATEWAY_TOKEN=dev-token-change-in-prod
 # CF_ACCESS_TEAM_DOMAIN=myteam.cloudflareaccess.com
 # CF_ACCESS_AUD=your-application-audience-tag
 
+# Discord（必須）
+# DISCORD_BOT_TOKEN=your-discord-bot-token
+# DISCORD_GUILD_ID=your-discord-guild-id  # dev-intake エージェントを routing する Guild ID
+
+# GitHub（必須）
+# GITHUB_PERSONAL_ACCESS_TOKEN=ghp_...    # Issue 起票に使用
+
+# OpenClaw モデル（省略時は claude-sonnet-4-6）
+# OPENCLAW_MODEL=anthropic/claude-sonnet-4-6
+
 # Optional chat channels
 # TELEGRAM_BOT_TOKEN=optional
-# DISCORD_BOT_TOKEN=optional
 
 # CDP (Chrome DevTools Protocol) configuration for browser automation
 # CDP_SECRET=shared-secret-for-cdp-auth
