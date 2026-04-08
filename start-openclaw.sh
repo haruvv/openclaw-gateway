@@ -179,21 +179,6 @@ if (process.env.TELEGRAM_BOT_TOKEN) {
     }
 }
 
-// Discord configuration
-// Discord uses a nested dm object: dm.policy, dm.allowFrom (per DiscordDmConfig)
-if (process.env.DISCORD_BOT_TOKEN) {
-    const dmPolicy = process.env.DISCORD_DM_POLICY || 'pairing';
-    const dm = { policy: dmPolicy };
-    if (dmPolicy === 'open') {
-        dm.allowFrom = ['*'];
-    }
-    config.channels.discord = {
-        token: process.env.DISCORD_BOT_TOKEN,
-        enabled: true,
-        dm: dm,
-    };
-}
-
 // Slack configuration
 if (process.env.SLACK_BOT_TOKEN && process.env.SLACK_APP_TOKEN) {
     config.channels.slack = {

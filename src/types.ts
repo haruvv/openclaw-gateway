@@ -26,8 +26,6 @@ export interface OpenClawEnv {
   SANDBOX_SLEEP_AFTER?: string; // How long before sandbox sleeps: 'never' (default), or duration like '10m', '1h'
   TELEGRAM_BOT_TOKEN?: string;
   TELEGRAM_DM_POLICY?: string;
-  DISCORD_BOT_TOKEN?: string;
-  DISCORD_DM_POLICY?: string;
   TELEGRAM_CHAT_ID?: string; // Telegram chat ID for routing messages to dev-intake agent
   SLACK_BOT_TOKEN?: string;
   SLACK_APP_TOKEN?: string;
