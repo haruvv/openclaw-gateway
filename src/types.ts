@@ -28,8 +28,12 @@ export interface OpenClawEnv {
   TELEGRAM_DM_POLICY?: string;
   DISCORD_BOT_TOKEN?: string;
   DISCORD_DM_POLICY?: string;
+  DISCORD_GUILD_ID?: string; // Guild ID for routing messages to dev-intake agent
   SLACK_BOT_TOKEN?: string;
   SLACK_APP_TOKEN?: string;
+  // dev-intake agent configuration
+  GITHUB_PERSONAL_ACCESS_TOKEN?: string; // GitHub PAT for Issue creation via MCP server
+  OPENCLAW_MODEL?: string; // Override model for OpenClaw agents (default: anthropic/claude-sonnet-4-6)
   // Cloudflare Access configuration for admin routes
   CF_ACCESS_TEAM_DOMAIN?: string; // e.g., 'myteam.cloudflareaccess.com'
   CF_ACCESS_AUD?: string; // Application Audience (AUD) tag
