@@ -142,3 +142,16 @@ export async function getLastBackupId(bucket: R2Bucket): Promise<string | null> 
   const handle = await getStoredHandle(bucket);
   return handle?.id ?? null;
 }
+
+/**
+ * Get the creation time of the last backup (ISO 8601 string).
+ * Reads the metadata object stored by the SDK alongside the squashfs archive.
+ */
+export async function getLastBackupTime(bucket: R2Bucket): Promise<string | null> {
+  const handle = await getStoredHandle(bucket);
+  if (!handle) return null;
+  const metaObj = await bucket.get(`backups/${handle.id}/meta.json`);
+  if (!metaObj) return null;
+  const meta = await metaObj.json<{ createdAt: string }>();
+  return meta.createdAt ?? null;
+}
