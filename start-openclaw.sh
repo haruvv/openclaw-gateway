@@ -39,6 +39,8 @@ if [ ! -f "$CONFIG_FILE" ]; then
     AUTH_ARGS=""
     if [ -n "$CLOUDFLARE_AI_GATEWAY_API_KEY" ] && [ -n "$CF_AI_GATEWAY_ACCOUNT_ID" ] && [ -n "$CF_AI_GATEWAY_GATEWAY_ID" ]; then
         AUTH_ARGS="--auth-choice cloudflare-ai-gateway-api-key --cloudflare-ai-gateway-account-id $CF_AI_GATEWAY_ACCOUNT_ID --cloudflare-ai-gateway-gateway-id $CF_AI_GATEWAY_GATEWAY_ID"
+    elif [ -n "$ZAI_API_KEY" ]; then
+        AUTH_ARGS="--auth-choice zai-api-key"
     elif [ -n "$ANTHROPIC_API_KEY" ]; then
         AUTH_ARGS="--auth-choice apiKey"
     elif [ -n "$OPENAI_API_KEY" ]; then
@@ -213,17 +215,17 @@ if (!hasDevIntake) {
     config.agents.list.push({
         id: 'dev-intake',
         workspace: '/root/clawd/workspace-dev-intake',
-        model: process.env.OPENCLAW_MODEL || 'anthropic/claude-sonnet-4-6',
+        model: process.env.OPENCLAW_MODEL || 'zai/glm-5.1',
     });
 }
 
-// DISCORD_GUILD_ID が設定されている場合、特定 Guild の messages を dev-intake に routing
+// TELEGRAM_CHAT_ID が設定されている場合、特定チャットの messages を dev-intake に routing
 config.bindings = config.bindings || [];
 const hasBinding = config.bindings.some(b => b.agentId === 'dev-intake');
-if (!hasBinding && process.env.DISCORD_GUILD_ID) {
+if (!hasBinding && process.env.TELEGRAM_CHAT_ID) {
     config.bindings.push({
         agentId: 'dev-intake',
-        match: { channel: 'discord', guildId: process.env.DISCORD_GUILD_ID },
+        match: { channel: 'telegram', chatId: process.env.TELEGRAM_CHAT_ID },
     });
 }
 
