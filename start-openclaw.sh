@@ -26,11 +26,14 @@ echo "Config directory: $CONFIG_DIR"
 
 mkdir -p "$CONFIG_DIR"
 
-# GitHub PAT をファイルに書き込む（exec サブプロセスに env var が引き継がれないため）
+# ~/.openclaw/.env に env var を書き込む
+# OpenClaw をサービスとして実行する場合、exec サブプロセスに env var が引き継がれない。
+# ~/.openclaw/.env に書くことで exec から参照できるようになる（公式ドキュメントの解決策）。
 if [ -n "$GITHUB_PERSONAL_ACCESS_TOKEN" ]; then
-    echo -n "$GITHUB_PERSONAL_ACCESS_TOKEN" > "$WORKSPACE_DIR/.github-token"
-    chmod 600 "$WORKSPACE_DIR/.github-token"
-    echo "GitHub token written to workspace"
+    # 既存の値を上書きしないよう一旦削除してから追記
+    sed -i '/^GITHUB_PERSONAL_ACCESS_TOKEN=/d' "$CONFIG_DIR/.env" 2>/dev/null || true
+    echo "GITHUB_PERSONAL_ACCESS_TOKEN=$GITHUB_PERSONAL_ACCESS_TOKEN" >> "$CONFIG_DIR/.env"
+    echo "GitHub token written to ~/.openclaw/.env"
 fi
 
 # ============================================================

@@ -21,10 +21,9 @@ dev team は Claude Code（GitHub Actions）が担当し、実装後は本番環
 2. curl で GitHub API を叩いて Issue を起票し、`ai-dev` ラベルを付ける
 
 ```bash
-# Issue 起票（トークンはファイルから読む）
-TOKEN=$(cat ~/clawd/.github-token)
+# Issue 起票
 RESPONSE=$(curl -s -X POST \
-  -H "Authorization: Bearer $TOKEN" \
+  -H "Authorization: Bearer $GITHUB_PERSONAL_ACCESS_TOKEN" \
   -H "Content-Type: application/json" \
   https://api.github.com/repos/haruvv/openclaw-dev/issues \
   -d "{\"title\": \"<タイトル>\", \"body\": \"<仕様詳細>\", \"labels\": [\"ai-dev\"]}")
