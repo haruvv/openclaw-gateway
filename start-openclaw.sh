@@ -332,6 +332,16 @@ if (!fs.existsSync(memoryPath)) {
 EOFPATCH
 
 # ============================================================
+# INSTALL PLUGINS
+# ============================================================
+# acpx: MCP サーバー統合に必要（GitHub MCP など）
+# 設定は config patch で書き込み済み。インストールは冪等なので毎回実行してよい。
+if [ -n "$GITHUB_PERSONAL_ACCESS_TOKEN" ]; then
+    echo "Installing acpx plugin for MCP support..."
+    openclaw plugins install acpx || echo "acpx install failed (may already be installed)"
+fi
+
+# ============================================================
 # START GATEWAY
 # ============================================================
 echo "Starting OpenClaw Gateway..."
