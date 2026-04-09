@@ -188,35 +188,11 @@ if (process.env.SLACK_BOT_TOKEN && process.env.SLACK_APP_TOKEN) {
     };
 }
 
-// ============================================================
-// AGENTS & BINDINGS
-// ============================================================
-// dev-intake: 開発依頼のヒアリングと GitHub Issue 起票を担うエージェント
-config.agents = config.agents || {};
-config.agents.list = config.agents.list || [];
-
-const hasDevIntake = config.agents.list.some(a => a.id === 'dev-intake');
-if (!hasDevIntake) {
-    config.agents.list.push({
-        id: 'dev-intake',
-        workspace: '/root/clawd/workspace-dev-intake',
-        model: process.env.OPENCLAW_MODEL || 'zai/glm-5.1',
-    });
-}
-
-// TELEGRAM_CHAT_ID が設定されている場合、特定チャットの messages を dev-intake に routing
-config.bindings = config.bindings || [];
-const hasBinding = config.bindings.some(b => b.agentId === 'dev-intake');
-if (!hasBinding && process.env.TELEGRAM_CHAT_ID) {
-    config.bindings.push({
-        agentId: 'dev-intake',
-        match: { channel: 'telegram', chatId: process.env.TELEGRAM_CHAT_ID },
-    });
-}
 
 // ============================================================
-// MCP SERVERS (GitHub)
+// MCP SERVERS
 // ============================================================
+
 // GitHub Issue 起票に @modelcontextprotocol/server-github を使用する
 if (process.env.GITHUB_PERSONAL_ACCESS_TOKEN) {
     config.plugins = config.plugins || {};
@@ -228,17 +204,112 @@ if (process.env.GITHUB_PERSONAL_ACCESS_TOKEN) {
         command: 'npx',
         args: ['-y', '@modelcontextprotocol/server-github'],
         env: {
-            GITHUB_PERSONAL_ACCESS_TOKEN: {
-                source: 'env',
-                provider: 'default',
-                id: 'GITHUB_PERSONAL_ACCESS_TOKEN',
-            },
+            GITHUB_PERSONAL_ACCESS_TOKEN: process.env.GITHUB_PERSONAL_ACCESS_TOKEN,
         },
     };
 }
 
+// dev team MCP server（開発タスク委譲用）
+if (process.env.DEV_TEAM_MCP_URL) {
+    config.mcp = config.mcp || {};
+    config.mcp.servers = config.mcp.servers || {};
+    config.mcp.servers['dev-team'] = {
+        url: process.env.DEV_TEAM_MCP_URL,
+        transport: 'streamable-http',
+        headers: {
+            Authorization: 'Bearer ' + process.env.DEV_TEAM_MCP_TOKEN,
+        },
+    };
+    console.log('dev-team MCP server registered:', process.env.DEV_TEAM_MCP_URL);
+}
+
 fs.writeFileSync(configPath, JSON.stringify(config, null, 2));
 console.log('Configuration patched successfully');
+
+// ============================================================
+// WORKSPACE FILES
+// ============================================================
+
+const workspaceDir = '/home/openclaw/clawd';
+fs.mkdirSync(workspaceDir, { recursive: true });
+
+// SOUL.md: 行動原則・委譲ルール（毎回上書き — デプロイで常に最新を反映）
+fs.writeFileSync(workspaceDir + '/SOUL.md', `# Identity
+
+あなたは haruvv の専属アシスタント「clawd」。
+チャットに常駐し、あらゆるタスクの受付・整理・委譲を担う。
+名前・口調・性格の詳細は IDENTITY.md を参照すること。
+
+# Language
+
+ユーザーへの返答は必ず日本語で行う。
+思考・内部処理は英語でよいが、出力は日本語。
+
+# Role
+
+- ユーザーからの依頼を受け取り、性質を判断して適切なエージェントに委譲する
+- 開発タスク（コード実装・バグ修正・機能追加・デプロイ）は自分では行わず dev team に委ねる
+- 調査・要約・調整などの軽作業は自分で対応する
+- タスクの進捗を把握し、完了報告をユーザーに届ける
+
+# Behavior
+
+- 実装は引き受けない。dev team の run_task を呼んで委譲する
+- 曖昧な依頼はまず要件を確認してから動く
+- 報告は簡潔に。余計な前置きや謝辞は不要
+- ユーザーが忙しいことを前提に、必要最小限の確認で進める
+
+# Task Delegation（開発タスクの委譲手順）
+
+コード実装・バグ修正・機能追加・デプロイなど開発を伴うタスクは以下の手順で委譲する。
+
+1. ユーザーの意図から実装仕様（spec）を整理する
+   - 何を作るか
+   - どこにデプロイするか（Cloudflare Workers / Pages など）
+   - 完成の判断基準
+
+2. run_task ツールを呼んで dev team に発注する
+   - callback_url: OpenClaw gateway の URL（環境から取得）
+   - callback_token: OPENCLAW_GATEWAY_TOKEN 環境変数の値
+   - spec: 整理した仕様テキスト
+
+3. ユーザーに「着手しました。完了したら通知します」と返す
+
+4. 完了通知を受け取ったら成果物を確認する
+   - 問題なければ URL と概要をユーザーに報告する
+   - 問題があれば追加要求を加えて run_task を再呼び出しする（最大3回）
+`);
+
+// USER.md: ユーザープロフィール（毎回上書き）
+fs.writeFileSync(workspaceDir + '/USER.md', `# User Profile
+
+**Name**: haruvv
+**Role**: 開発者・アーキテクト
+**Project**: 自律エージェント基盤の設計・開発
+
+# Context
+
+- 自律エージェントを組み合わせたプラットフォームを構築中
+- OpenClaw をチャット常駐ハブとして使い、専門エージェントに委譲する構成
+- 開発作業は別エージェント（dev team）に任せる方針
+
+# Preferences
+
+- 返答は簡潔でよい
+- 実装の細部より全体方針を重視する
+- 日本語でコミュニケーションする
+`);
+
+// IDENTITY.md: 名前・口調・性格（初回のみ作成 — チャットで育てる）
+const identityPath = workspaceDir + '/IDENTITY.md';
+if (!fs.existsSync(identityPath)) {
+    fs.writeFileSync(identityPath, `# Identity
+
+まだ何も決まっていない。
+haruvv との会話を通じて、名前・口調・性格を育てていく。
+`);
+    console.log('IDENTITY.md created (first boot)');
+}
 EOFPATCH
 
 # ============================================================

@@ -36,12 +36,15 @@ RUN mkdir -p /home/openclaw/.openclaw \
     && ln -s /home/openclaw/clawd /root/clawd
 
 # Copy startup script
-# Build cache bust: 2026-03-26-v32-home-dir
+# Build cache bust: 2026-04-09-v35-fix-bindings
 COPY start-openclaw.sh /usr/local/bin/start-openclaw.sh
 RUN chmod +x /usr/local/bin/start-openclaw.sh
 
 # Copy custom skills
 COPY skills/ /home/openclaw/clawd/skills/
+
+# Note: SOUL.md and USER.md are written by start-openclaw.sh at runtime.
+# IDENTITY.md is created by start-openclaw.sh only on first boot (chat-managed).
 
 # Ensure all files are readable for mksquashfs (Sandbox SDK backup).
 # OpenClaw and other tools may create restrictive config files at runtime,
