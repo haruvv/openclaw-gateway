@@ -309,6 +309,19 @@ haruvv との会話を通じて、名前・口調・性格を育てていく。
     console.log('IDENTITY.md created (first boot)');
 }
 
+// MEMORY.md: エージェントが自律的に書き込む動的メモリ（初回のみ作成 — 上書きしない）
+// OpenClaw が学習した内容・ユーザーの癖・過去の決定を蓄積する。
+// start-openclaw.sh が上書きすると学習内容が消えるため、初回作成のみ行う。
+const memoryPath = workspaceDir + '/MEMORY.md';
+if (!fs.existsSync(memoryPath)) {
+    fs.writeFileSync(memoryPath, `# Memory
+
+エージェントが会話を通じて学習した内容を記録する。
+このファイルは clawd が自律的に更新する。手動編集も可。
+`);
+    console.log('MEMORY.md created (first boot)');
+}
+
 EOFPATCH
 
 # ============================================================
