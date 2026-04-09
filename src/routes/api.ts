@@ -32,10 +32,12 @@ adminApi.get('/devices', async (c) => {
     await ensureGateway(sandbox, c.env);
 
     // Run OpenClaw CLI to list devices
-    // Token is not passed as a CLI argument (visible via ps/proc).
-    // The gateway token is written to ~/.openclaw/openclaw.json by start-openclaw.sh.
+    // NOTE: --token is required when --url is specified (OpenClaw v2026.2.3+).
+    // The CLI does not read the token from config when --url is provided.
+    const token = c.env.MOLTBOT_GATEWAY_TOKEN;
+    const tokenArg = token ? ` --token ${token}` : '';
     const proc = await sandbox.startProcess(
-      `openclaw devices list --json --url ws://localhost:18789`,
+      `openclaw devices list --json --url ws://localhost:18789${tokenArg}`,
     );
     await waitForProcess(proc, CLI_TIMEOUT_MS);
 
@@ -93,11 +95,12 @@ adminApi.post('/devices/:requestId/approve', async (c) => {
     await ensureGateway(sandbox, c.env);
 
     // Run OpenClaw CLI to approve the device
-    // Token is not passed as a CLI argument (visible via ps/proc).
-    // The gateway token is written to ~/.openclaw/openclaw.json by start-openclaw.sh
-    // and the CLI reads it from there automatically.
+    // NOTE: --token is required when --url is specified (OpenClaw v2026.2.3+).
+    // The CLI does not read the token from config when --url is provided.
+    const token = c.env.MOLTBOT_GATEWAY_TOKEN;
+    const tokenArg = token ? ` --token ${token}` : '';
     const proc = await sandbox.startProcess(
-      `openclaw devices approve ${requestId} --url ws://localhost:18789`,
+      `openclaw devices approve ${requestId} --url ws://localhost:18789${tokenArg}`,
     );
     await waitForProcess(proc, CLI_TIMEOUT_MS);
 
