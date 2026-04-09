@@ -85,6 +85,13 @@ try {
 config.gateway = config.gateway || {};
 config.channels = config.channels || {};
 
+// Workspace configuration
+// デフォルトは ~/.openclaw/workspace だが、skills を /home/openclaw/clawd/skills に
+// 置いているためワークスペースを明示的に指定する
+config.agents = config.agents || {};
+config.agents.defaults = config.agents.defaults || {};
+config.agents.defaults.workspace = '/home/openclaw/clawd';
+
 // Gateway configuration
 config.gateway.port = 18789;
 config.gateway.mode = 'local';
