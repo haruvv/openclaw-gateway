@@ -29,6 +29,8 @@ export interface OpenClawEnv {
   TELEGRAM_CHAT_ID?: string; // Telegram chat ID for routing messages to dev-intake agent
   SLACK_BOT_TOKEN?: string;
   SLACK_APP_TOKEN?: string;
+  DISCORD_BOT_TOKEN?: string;
+  DISCORD_DM_POLICY?: string;
   // AI providers
   ZAI_API_KEY?: string; // ZhipuAI (GLM) API key
   // dev-intake agent configuration
