@@ -17,22 +17,18 @@ dev team は Claude Code（GitHub Actions）が担当し、実装後は本番環
 ## 委譲手順
 
 1. 仕様を整理する（何を作るか・デプロイ先・完成基準）
-2. GitHub MCP で Issue を起票し、`ai-dev` ラベルを付ける
 
-```
-create_issue(
-  owner="haruvv",
-  repo="openclaw-dev",
-  title="<一行の概要>",
-  body="<仕様詳細：要件・デプロイ先・完成基準を含める>"
-)
+2. curl で GitHub API を叩いて Issue を起票し、`ai-dev` ラベルを付ける
 
-add_labels_to_issue(
-  owner="haruvv",
-  repo="openclaw-dev",
-  issue_number=<番号>,
-  labels=["ai-dev"]
-)
+```bash
+# Issue 起票
+RESPONSE=$(curl -s -X POST \
+  -H "Authorization: Bearer $GITHUB_PERSONAL_ACCESS_TOKEN" \
+  -H "Content-Type: application/json" \
+  https://api.github.com/repos/haruvv/openclaw-dev/issues \
+  -d "{\"title\": \"<タイトル>\", \"body\": \"<仕様詳細>\", \"labels\": [\"ai-dev\"]}")
+
+echo "$RESPONSE" | grep -o '"number":[0-9]*' | head -1
 ```
 
 3. ユーザーに「着手しました。完了したら通知します」と返す
@@ -47,4 +43,4 @@ Telegram に完了通知が来たら成果物を確認する。
 
 - PR レビューは不要。dev team が main に直接プッシュして本番デプロイする
 - Issue の body に「dev 環境」と書くと dev 環境にデプロイされる
-- 過去の Issue は GitHub で確認できる（タスク履歴として機能する）
+- `$GITHUB_PERSONAL_ACCESS_TOKEN` は環境変数として利用可能

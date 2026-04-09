@@ -207,26 +207,6 @@ if (process.env.SLACK_BOT_TOKEN && process.env.SLACK_APP_TOKEN) {
 }
 
 
-// ============================================================
-// MCP SERVERS
-// ============================================================
-
-// GitHub Issue 起票に @modelcontextprotocol/server-github を使用する
-if (process.env.GITHUB_PERSONAL_ACCESS_TOKEN) {
-    config.plugins = config.plugins || {};
-    config.plugins.entries = config.plugins.entries || {};
-    config.plugins.entries.acpx = config.plugins.entries.acpx || { enabled: true, config: {} };
-    config.plugins.entries.acpx.config = config.plugins.entries.acpx.config || {};
-    config.plugins.entries.acpx.config.mcpServers = config.plugins.entries.acpx.config.mcpServers || {};
-    config.plugins.entries.acpx.config.mcpServers.github = {
-        command: 'npx',
-        args: ['-y', '@modelcontextprotocol/server-github'],
-        env: {
-            GITHUB_PERSONAL_ACCESS_TOKEN: process.env.GITHUB_PERSONAL_ACCESS_TOKEN,
-        },
-    };
-}
-
 fs.writeFileSync(configPath, JSON.stringify(config, null, 2));
 console.log('Configuration patched successfully');
 
@@ -272,11 +252,12 @@ fs.writeFileSync(workspaceDir + '/SOUL.md', `# Identity
    - どこにデプロイするか（Cloudflare Workers / Pages / dev 環境など）
    - 完成の判断基準
 
-2. GitHub MCP の create_issue でリポジトリ haruvv/openclaw-dev に Issue を起票する
+2. curl で GitHub API を叩いてリポジトリ haruvv/openclaw-dev に Issue を起票する
    - title: 一行で概要を表すタイトル
    - body: 整理した仕様（要件・デプロイ先・完成基準を含める）
    - labels: ["ai-dev"] ← **必ずこの値のみ**。enhancement など他のラベルは絶対に使わない
    - Issue は1件にまとめる。複数の sub-issue に分割しない
+   - $GITHUB_PERSONAL_ACCESS_TOKEN を使って認証する
 
 3. ユーザーに「着手しました。完了したら通知します」と返す
 
@@ -330,16 +311,6 @@ if (!fs.existsSync(memoryPath)) {
 }
 
 EOFPATCH
-
-# ============================================================
-# INSTALL PLUGINS
-# ============================================================
-# acpx: MCP サーバー統合に必要（GitHub MCP など）
-# 設定は config patch で書き込み済み。インストールは冪等なので毎回実行してよい。
-if [ -n "$GITHUB_PERSONAL_ACCESS_TOKEN" ]; then
-    echo "Installing acpx plugin for MCP support..."
-    openclaw plugins install acpx || echo "acpx install failed (may already be installed)"
-fi
 
 # ============================================================
 # START GATEWAY
