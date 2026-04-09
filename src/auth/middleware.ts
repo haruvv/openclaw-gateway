@@ -61,6 +61,7 @@ export function createAccessMiddleware(options: AccessMiddlewareOptions) {
 
     // Check if CF Access is configured
     if (!teamDomain || !expectedAud) {
+      console.error('[AUTH] CF Access not configured - teamDomain:', !!teamDomain, 'expectedAud:', !!expectedAud);
       if (type === 'json') {
         return c.json(
           {
@@ -88,6 +89,7 @@ export function createAccessMiddleware(options: AccessMiddlewareOptions) {
     const jwt = extractJWT(c);
 
     if (!jwt) {
+      console.warn('[AUTH] JWT missing for path:', c.req.path);
       if (type === 'html' && redirectOnMissing) {
         return c.redirect(`https://${teamDomain}`, 302);
       }

@@ -265,9 +265,11 @@ fs.writeFileSync(workspaceDir + '/SOUL.md', `# Identity
    - どこにデプロイするか（Cloudflare Workers / Pages / dev 環境など）
    - 完成の判断基準
 
-2. GitHub MCP の create_issue でリポジトリ haruvv/openclaw-dev に Issue を起票し、ai-dev ラベルを付ける
+2. GitHub MCP の create_issue でリポジトリ haruvv/openclaw-dev に Issue を起票する
    - title: 一行で概要を表すタイトル
    - body: 整理した仕様（要件・デプロイ先・完成基準を含める）
+   - labels: ["ai-dev"] ← **必ずこの値のみ**。enhancement など他のラベルは絶対に使わない
+   - Issue は1件にまとめる。複数の sub-issue に分割しない
 
 3. ユーザーに「着手しました。完了したら通知します」と返す
 
