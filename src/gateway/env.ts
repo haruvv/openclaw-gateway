@@ -54,6 +54,11 @@ export function buildEnvVars(env: OpenClawEnv): Record<string, string> {
   // dev-intake agent
   if (env.GITHUB_PERSONAL_ACCESS_TOKEN) envVars.GITHUB_PERSONAL_ACCESS_TOKEN = env.GITHUB_PERSONAL_ACCESS_TOKEN;
   if (env.OPENCLAW_MODEL) envVars.OPENCLAW_MODEL = env.OPENCLAW_MODEL;
+  // dev-team MCP server
+  if (env.DEV_TEAM_MCP_URL) envVars.DEV_TEAM_MCP_URL = env.DEV_TEAM_MCP_URL;
+  if (env.DEV_TEAM_MCP_TOKEN) envVars.DEV_TEAM_MCP_TOKEN = env.DEV_TEAM_MCP_TOKEN;
+  // Google Gemini
+  if (env.GEMINI_API_KEY) envVars.GEMINI_API_KEY = env.GEMINI_API_KEY;
 
   // Note: R2 credentials are no longer passed to the container.
   // Persistence is handled by the Sandbox SDK's backup/restore API,

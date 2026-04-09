@@ -1,8 +1,8 @@
 import { Hono } from 'hono';
 import type { AppEnv } from '../types';
 import { GATEWAY_PORT } from '../config';
-import { findExistingGatewayProcess, ensureGateway } from '../gateway';
-import { restoreIfNeeded } from '../persistence';
+import { findExistingGatewayProcess, ensureGateway, killGateway } from '../gateway';
+import { restoreIfNeeded, signalRestoreNeeded } from '../persistence';
 
 /**
  * Public routes - NO Cloudflare Access authentication required
@@ -92,6 +92,41 @@ publicRoutes.get('/_admin/assets/*', async (c) => {
   const assetPath = url.pathname.replace('/_admin/assets/', '/assets/');
   const assetUrl = new URL(assetPath, url.origin);
   return c.env.ASSETS.fetch(new Request(assetUrl.toString(), c.req.raw));
+});
+
+// POST /api/gateway/restart - Gateway restart (authenticated by MOLTBOT_GATEWAY_TOKEN, no CF Access required)
+publicRoutes.post('/api/gateway/restart', async (c) => {
+  const token = c.env.MOLTBOT_GATEWAY_TOKEN;
+  if (!token) return c.json({ error: 'Gateway token not configured' }, 500);
+
+  const auth = c.req.header('Authorization');
+  if (auth !== `Bearer ${token}`) return c.json({ error: 'Unauthorized' }, 401);
+
+  const sandbox = c.get('sandbox');
+  try {
+    await killGateway(sandbox);
+    await signalRestoreNeeded(c.env.BACKUP_BUCKET);
+    return c.json({ success: true, message: 'Gateway killed, will restart on next request' });
+  } catch (err) {
+    return c.json({ error: err instanceof Error ? err.message : 'Unknown error' }, 500);
+  }
+});
+
+// POST /telegram - Telegram webhook (no auth required; token validated by OpenClaw inside container)
+publicRoutes.post('/telegram', async (c) => {
+  const sandbox = c.get('sandbox');
+  try {
+    await restoreIfNeeded(sandbox, c.env.BACKUP_BUCKET);
+  } catch {
+    // non-fatal
+  }
+  try {
+    await ensureGateway(sandbox, c.env);
+  } catch (err) {
+    console.error('[telegram] Failed to start gateway:', err);
+    return c.json({ error: 'Gateway not ready' }, 503);
+  }
+  return sandbox.containerFetch(c.req.raw, GATEWAY_PORT);
 });
 
 export { publicRoutes };

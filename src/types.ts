@@ -34,6 +34,11 @@ export interface OpenClawEnv {
   // dev-intake agent configuration
   GITHUB_PERSONAL_ACCESS_TOKEN?: string; // GitHub PAT for Issue creation via MCP server
   OPENCLAW_MODEL?: string; // Override model for OpenClaw agents (default: zai/glm-5.1)
+  // dev-team MCP server (task delegation)
+  DEV_TEAM_MCP_URL?: string; // URL of the dev-team MCP server (Cloudflare Worker)
+  DEV_TEAM_MCP_TOKEN?: string; // Bearer token for dev-team MCP server auth
+  // Google Gemini
+  GEMINI_API_KEY?: string; // Google Gemini API key
   // Cloudflare Access configuration for admin routes
   CF_ACCESS_TEAM_DOMAIN?: string; // e.g., 'myteam.cloudflareaccess.com'
   CF_ACCESS_AUD?: string; // Application Audience (AUD) tag
