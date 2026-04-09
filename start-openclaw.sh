@@ -162,6 +162,13 @@ if (process.env.CF_AI_GATEWAY_MODEL) {
     }
 }
 
+// Z.AI (GLM) model configuration
+if (process.env.ZAI_API_KEY) {
+    config.agents = config.agents || {};
+    config.agents.defaults = config.agents.defaults || {};
+    config.agents.defaults.model = { primary: 'zai/glm-4.7' };
+}
+
 // Telegram configuration
 // Overwrite entire channel object to drop stale keys from old R2 backups
 // that would fail OpenClaw's strict config validation (see #47)
