@@ -162,11 +162,15 @@ if (process.env.CF_AI_GATEWAY_MODEL) {
     }
 }
 
-// Z.AI (GLM) model configuration
+// Z.AI (GLM) model configuration with Gemini fallback
 if (process.env.ZAI_API_KEY) {
     config.agents = config.agents || {};
     config.agents.defaults = config.agents.defaults || {};
-    config.agents.defaults.model = { primary: 'zai/glm-4.7' };
+    const fallbacks = [];
+    if (process.env.GEMINI_API_KEY) fallbacks.push('google/gemini-2.5-flash');
+    config.agents.defaults.model = fallbacks.length > 0
+        ? { primary: 'zai/glm-4.7', fallbacks }
+        : { primary: 'zai/glm-4.7' };
 }
 
 // Telegram configuration
@@ -216,20 +220,6 @@ if (process.env.GITHUB_PERSONAL_ACCESS_TOKEN) {
     };
 }
 
-// dev team MCP server（開発タスク委譲用）
-if (process.env.DEV_TEAM_MCP_URL) {
-    config.mcp = config.mcp || {};
-    config.mcp.servers = config.mcp.servers || {};
-    config.mcp.servers['dev-team'] = {
-        url: process.env.DEV_TEAM_MCP_URL,
-        transport: 'streamable-http',
-        headers: {
-            Authorization: 'Bearer ' + process.env.DEV_TEAM_MCP_TOKEN,
-        },
-    };
-    console.log('dev-team MCP server registered:', process.env.DEV_TEAM_MCP_URL);
-}
-
 fs.writeFileSync(configPath, JSON.stringify(config, null, 2));
 console.log('Configuration patched successfully');
 
@@ -261,7 +251,7 @@ fs.writeFileSync(workspaceDir + '/SOUL.md', `# Identity
 
 # Behavior
 
-- 実装は引き受けない。dev team の run_task を呼んで委譲する
+- 実装は引き受けない。dev-team スキルで委譲する
 - 曖昧な依頼はまず要件を確認してから動く
 - 報告は簡潔に。余計な前置きや謝辞は不要
 - ユーザーが忙しいことを前提に、必要最小限の確認で進める
@@ -270,21 +260,20 @@ fs.writeFileSync(workspaceDir + '/SOUL.md', `# Identity
 
 コード実装・バグ修正・機能追加・デプロイなど開発を伴うタスクは以下の手順で委譲する。
 
-1. ユーザーの意図から実装仕様（spec）を整理する
+1. ユーザーの意図から実装仕様を整理する
    - 何を作るか
-   - どこにデプロイするか（Cloudflare Workers / Pages など）
+   - どこにデプロイするか（Cloudflare Workers / Pages / dev 環境など）
    - 完成の判断基準
 
-2. run_task ツールを呼んで dev team に発注する
-   - callback_url: OpenClaw gateway の URL（環境から取得）
-   - callback_token: OPENCLAW_GATEWAY_TOKEN 環境変数の値
-   - spec: 整理した仕様テキスト
+2. GitHub MCP の create_issue でリポジトリ haruvv/openclaw-dev に Issue を起票し、ai-dev ラベルを付ける
+   - title: 一行で概要を表すタイトル
+   - body: 整理した仕様（要件・デプロイ先・完成基準を含める）
 
 3. ユーザーに「着手しました。完了したら通知します」と返す
 
-4. 完了通知を受け取ったら成果物を確認する
+4. Telegram に完了通知が来たら成果物を確認する
    - 問題なければ URL と概要をユーザーに報告する
-   - 問題があれば追加要求を加えて run_task を再呼び出しする（最大3回）
+   - 問題があれば追加の Issue を起票して再依頼する（最大3回）
 `);
 
 // USER.md: ユーザープロフィール（毎回上書き）
@@ -317,6 +306,7 @@ haruvv との会話を通じて、名前・口調・性格を育てていく。
 `);
     console.log('IDENTITY.md created (first boot)');
 }
+
 EOFPATCH
 
 # ============================================================
