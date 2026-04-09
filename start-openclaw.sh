@@ -26,6 +26,13 @@ echo "Config directory: $CONFIG_DIR"
 
 mkdir -p "$CONFIG_DIR"
 
+# GitHub PAT をファイルに書き込む（exec サブプロセスに env var が引き継がれないため）
+if [ -n "$GITHUB_PERSONAL_ACCESS_TOKEN" ]; then
+    echo -n "$GITHUB_PERSONAL_ACCESS_TOKEN" > "$WORKSPACE_DIR/.github-token"
+    chmod 600 "$WORKSPACE_DIR/.github-token"
+    echo "GitHub token written to workspace"
+fi
+
 # ============================================================
 # ONBOARD (only if no config exists yet)
 # ============================================================
