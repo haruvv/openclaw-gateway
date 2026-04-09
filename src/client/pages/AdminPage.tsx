@@ -53,6 +53,7 @@ export default function AdminPage() {
   const [error, setError] = useState<string | null>(null);
   const [actionInProgress, setActionInProgress] = useState<string | null>(null);
   const [restartInProgress, setRestartInProgress] = useState(false);
+  const [restartConfirming, setRestartConfirming] = useState(false);
   const [syncInProgress, setSyncInProgress] = useState(false);
 
   const fetchDevices = useCallback(async () => {
@@ -129,21 +130,17 @@ export default function AdminPage() {
   };
 
   const handleRestartGateway = async () => {
-    if (
-      !confirm(
-        'Are you sure you want to restart the gateway? This will disconnect all clients temporarily.',
-      )
-    ) {
+    if (!restartConfirming) {
+      setRestartConfirming(true);
       return;
     }
 
+    setRestartConfirming(false);
     setRestartInProgress(true);
     try {
       const result = await restartGateway();
       if (result.success) {
         setError(null);
-        // Show success message briefly
-        alert('Gateway restart initiated. Clients will reconnect automatically.');
       } else {
         setError(result.error || 'Failed to restart gateway');
       }
@@ -232,14 +229,34 @@ export default function AdminPage() {
       <section className="devices-section gateway-section">
         <div className="section-header">
           <h2>Gateway Controls</h2>
-          <button
-            className="btn btn-danger"
-            onClick={handleRestartGateway}
-            disabled={restartInProgress}
-          >
-            {restartInProgress && <ButtonSpinner />}
-            {restartInProgress ? 'Restarting...' : 'Restart Gateway'}
-          </button>
+          {restartConfirming ? (
+            <>
+              <button
+                className="btn btn-danger"
+                onClick={handleRestartGateway}
+                disabled={restartInProgress}
+              >
+                {restartInProgress && <ButtonSpinner />}
+                {restartInProgress ? 'Restarting...' : 'Confirm Restart'}
+              </button>
+              <button
+                className="btn btn-secondary"
+                onClick={() => setRestartConfirming(false)}
+                disabled={restartInProgress}
+              >
+                Cancel
+              </button>
+            </>
+          ) : (
+            <button
+              className="btn btn-danger"
+              onClick={handleRestartGateway}
+              disabled={restartInProgress}
+            >
+              {restartInProgress && <ButtonSpinner />}
+              {restartInProgress ? 'Restarting...' : 'Restart Gateway'}
+            </button>
+          )}
         </div>
         <p className="hint">
           Restart the gateway to apply configuration changes or recover from errors. All connected
