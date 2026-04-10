@@ -35,6 +35,7 @@ export interface OpenClawEnv {
   ZAI_API_KEY?: string; // ZhipuAI (GLM) API key
   // dev-intake agent configuration
   GITHUB_PERSONAL_ACCESS_TOKEN?: string; // GitHub PAT for Issue creation via MCP server
+  GITHUB_WEBHOOK_SECRET?: string; // GitHub webhook signature verification secret
   OPENCLAW_MODEL?: string; // Override model for OpenClaw agents (default: zai/glm-5.1)
   // dev-team MCP server (task delegation)
   DEV_TEAM_MCP_URL?: string; // URL of the dev-team MCP server (Cloudflare Worker)
