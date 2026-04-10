@@ -168,21 +168,10 @@ app.use('*', async (c, next) => {
 });
 
 // =============================================================================
-// PUBLIC ROUTES: No Cloudflare Access authentication required
+// ROUTE-INDEPENDENT MIDDLEWARE: Auth + validation applied before ANY route
 // =============================================================================
 
-// Mount public routes first (before auth middleware)
-// Includes: /sandbox-health, /logo.png, /logo-small.png, /api/status, /_admin/assets/*
-app.route('/', publicRoutes);
-
-// Mount CDP routes (uses shared secret auth via query param, not CF Access)
-app.route('/cdp', cdp);
-
-// =============================================================================
-// PROTECTED ROUTES: Cloudflare Access authentication required
-// =============================================================================
-
-// Paths handled by publicRoutes — no CF Access or env validation needed
+// Paths handled by publicRoutes — exempt from CF Access and env validation
 const PUBLIC_PATHS = new Set([
   '/sandbox-health',
   '/logo.png',
@@ -197,21 +186,22 @@ function isPublicPath(pathname: string): boolean {
   return PUBLIC_PATHS.has(pathname) || pathname.startsWith('/_admin/assets/');
 }
 
-// Middleware: Validate required environment variables (skip in dev mode and for debug routes)
+// Middleware: Validate required environment variables
+// MUST be registered before app.route() calls so it runs before subrouter handlers
 app.use('*', async (c, next) => {
   const url = new URL(c.req.url);
 
-  // Skip validation for public routes (handled by publicRoutes with their own auth)
+  // Public routes bypass env validation (they have their own auth)
   if (isPublicPath(url.pathname)) {
     return next();
   }
 
-  // Skip validation for debug routes (they have their own enable check)
+  // Debug routes bypass env validation (they have their own enable check)
   if (url.pathname.startsWith('/debug')) {
     return next();
   }
 
-  // Skip validation in dev/test mode
+  // Dev/test mode bypasses env validation
   if (c.env.DEV_MODE === 'true' || c.env.E2E_TEST_MODE === 'true') {
     return next();
   }
@@ -222,12 +212,10 @@ app.use('*', async (c, next) => {
 
     const acceptsHtml = c.req.header('Accept')?.includes('text/html');
     if (acceptsHtml) {
-      // Return a user-friendly HTML error page
       const html = configErrorHtml.replace('{{MISSING_VARS}}', missingVars.join(', '));
       return c.html(html, 503);
     }
 
-    // Return JSON error for API requests
     return c.json(
       {
         error: 'Configuration error',
@@ -242,16 +230,16 @@ app.use('*', async (c, next) => {
   return next();
 });
 
-// Middleware: Cloudflare Access authentication for protected routes
+// Middleware: Cloudflare Access authentication
+// Registered before app.route() so it runs before any subrouter handlers
 app.use('*', async (c, next) => {
   const url = new URL(c.req.url);
 
-  // Skip CF Access for public routes (handled by publicRoutes with their own auth)
+  // Public routes bypass CF Access (authenticated by their own mechanisms)
   if (isPublicPath(url.pathname)) {
     return next();
   }
 
-  // Determine response type based on Accept header
   const acceptsHtml = c.req.header('Accept')?.includes('text/html');
   const middleware = createAccessMiddleware({
     type: acceptsHtml ? 'html' : 'json',
@@ -261,10 +249,20 @@ app.use('*', async (c, next) => {
   return middleware(c, next);
 });
 
-// Mount API routes (protected by Cloudflare Access)
+// =============================================================================
+// ROUTES: Mounted after middleware so middleware chain runs first
+// =============================================================================
+
+// Public routes — no Cloudflare Access authentication required
+app.route('/', publicRoutes);
+
+// CDP routes (uses shared secret auth via query param, not CF Access)
+app.route('/cdp', cdp);
+
+// API routes (protected by CF Access middleware above)
 app.route('/api', api);
 
-// Mount Admin UI routes (protected by Cloudflare Access)
+// Admin UI routes (protected by CF Access middleware above)
 app.route('/_admin', adminUi);
 
 // Mount debug routes (protected by Cloudflare Access, only when DEBUG_ROUTES is enabled)

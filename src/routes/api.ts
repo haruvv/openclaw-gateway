@@ -1,6 +1,5 @@
 import { Hono } from 'hono';
 import type { AppEnv } from '../types';
-import { createAccessMiddleware } from '../auth';
 import { ensureGateway, findExistingGatewayProcess, killGateway, waitForProcess } from '../gateway';
 import { createSnapshot, getLastBackupTime, signalRestoreNeeded } from '../persistence';
 
@@ -19,9 +18,6 @@ const api = new Hono<AppEnv>();
  * Admin API routes - all protected by Cloudflare Access
  */
 const adminApi = new Hono<AppEnv>();
-
-// Middleware: Verify Cloudflare Access JWT for all admin routes
-adminApi.use('*', createAccessMiddleware({ type: 'json' }));
 
 // GET /api/admin/devices - List pending and paired devices
 adminApi.get('/devices', async (c) => {
