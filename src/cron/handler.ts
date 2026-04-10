@@ -4,6 +4,7 @@ import { buildSandboxOptions } from '../index';
 import { ensureGateway } from '../gateway';
 import { createSnapshot, getLastBackupTime } from '../persistence';
 import { shouldWakeContainer, DEFAULT_LEAD_TIME_MS, CRON_STORE_R2_KEY } from './wake';
+import { maybeQueueAutonomousTasks } from './tasks';
 
 const AUTO_BACKUP_INTERVAL_MS = 30 * 60 * 1000; // 30 minutes
 const BACKUP_DIR = '/home/openclaw';
@@ -65,6 +66,7 @@ export async function handleScheduled(env: OpenClawEnv): Promise<void> {
     await ensureGateway(sandbox, env);
     console.log('[CRON] Gateway is up');
     await maybeAutoBackup(sandbox, env);
+    await maybeQueueAutonomousTasks(sandbox, env);
     return;
   }
 
