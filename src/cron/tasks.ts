@@ -28,14 +28,17 @@ interface TaskQueue {
 
 interface TaskLastRuns {
   monetizeResearch?: number; // epoch ms
+  contentCreate?: number;
+  revenueReport?: number;
 }
 
 export const TASK_QUEUE_KEY = 'openclaw/tasks/queue.json';
 const TASK_LAST_RUNS_KEY = 'openclaw/tasks/last-runs.json';
 const PENDING_TASKS_PATH = '/home/openclaw/clawd/PENDING_TASKS.txt';
 
-/** 72 hours between monetize-research runs */
-const MONETIZE_RESEARCH_INTERVAL_MS = 72 * 60 * 60 * 1000;
+const MONETIZE_RESEARCH_INTERVAL_MS = 72 * 60 * 60 * 1000; // 72 hours
+const CONTENT_CREATE_INTERVAL_MS = 3 * 24 * 60 * 60 * 1000; // 3 days
+const REVENUE_REPORT_INTERVAL_MS = 30 * 24 * 60 * 60 * 1000; // 30 days
 
 /**
  * Check whether any autonomous tasks are due and write them to the R2 queue.
@@ -59,11 +62,14 @@ export async function scheduleTask(env: OpenClawEnv): Promise<boolean> {
   const now = Date.now();
   const newTasks: string[] = [];
 
-  if (
-    !lastRuns.monetizeResearch ||
-    now - lastRuns.monetizeResearch > MONETIZE_RESEARCH_INTERVAL_MS
-  ) {
+  if (!lastRuns.monetizeResearch || now - lastRuns.monetizeResearch > MONETIZE_RESEARCH_INTERVAL_MS) {
     newTasks.push('monetize-research');
+  }
+  if (!lastRuns.contentCreate || now - lastRuns.contentCreate > CONTENT_CREATE_INTERVAL_MS) {
+    newTasks.push('content-create');
+  }
+  if (!lastRuns.revenueReport || now - lastRuns.revenueReport > REVENUE_REPORT_INTERVAL_MS) {
+    newTasks.push('revenue-report');
   }
 
   if (newTasks.length === 0) return existingQueue.tasks.length > 0;
@@ -76,6 +82,8 @@ export async function scheduleTask(env: OpenClawEnv): Promise<boolean> {
   // Update R2: queue and last-run timestamps
   const updatedLastRuns: TaskLastRuns = { ...lastRuns };
   if (newTasks.includes('monetize-research')) updatedLastRuns.monetizeResearch = now;
+  if (newTasks.includes('content-create')) updatedLastRuns.contentCreate = now;
+  if (newTasks.includes('revenue-report')) updatedLastRuns.revenueReport = now;
 
   await Promise.all([
     env.BACKUP_BUCKET.put(TASK_QUEUE_KEY, JSON.stringify({ tasks: merged, queuedAt: now })),

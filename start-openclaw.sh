@@ -381,6 +381,8 @@ OpenClaw はメッセージを受け取るたびに PENDING_TASKS.txt を確認�
 | タスク名 | Skill | 間隔 |
 |---|---|---|
 | monetize-research | monetize-research | 72時間ごと |
+| content-create | content-create | 3日ごと |
+| revenue-report | revenue-report | 30日ごと |
 
 ## 動作フロー
 
