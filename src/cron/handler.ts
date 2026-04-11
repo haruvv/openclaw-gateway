@@ -4,7 +4,7 @@ import { buildSandboxOptions } from '../index';
 import { ensureGateway } from '../gateway';
 import { createSnapshot, getLastBackupTime } from '../persistence';
 import { shouldWakeContainer, DEFAULT_LEAD_TIME_MS, CRON_STORE_R2_KEY } from './wake';
-import { maybeQueueAutonomousTasks } from './tasks';
+import { scheduleTask, injectQueuedTasks, TASK_QUEUE_KEY } from './tasks';
 
 const AUTO_BACKUP_INTERVAL_MS = 30 * 60 * 1000; // 30 minutes
 const BACKUP_DIR = '/home/openclaw';
@@ -58,39 +58,55 @@ async function maybeAutoBackup(
 export async function handleScheduled(env: OpenClawEnv): Promise<void> {
   const sandbox = getSandbox(env.Sandbox, 'openclaw', buildSandboxOptions(env));
 
-  // keepAlive モード（SANDBOX_SLEEP_AFTER 未設定）では毎分コンテナの死活を確認し、
-  // 落ちていれば自動再起動する。デプロイ後の DO リセットから最大1分で復帰できる。
+  // Phase 1: schedule tasks (R2 only, safe regardless of container state)
+  await scheduleTask(env);
+
   const sleepAfter = env.SANDBOX_SLEEP_AFTER?.toLowerCase() || 'never';
+
+  // keepAlive モード: 毎分コンテナの死活を確認し、タスクを注入する
   if (sleepAfter === 'never') {
     console.log('[CRON] keepAlive mode: ensuring gateway is running');
     await ensureGateway(sandbox, env);
     console.log('[CRON] Gateway is up');
     await maybeAutoBackup(sandbox, env);
-    await maybeQueueAutonomousTasks(sandbox, env);
+    await injectQueuedTasks(sandbox, env);
     return;
   }
 
-  // スリープポリシーが設定されている場合は従来通りスケジュール起動のみ
-  const cronStoreObject = await env.BACKUP_BUCKET.get(CRON_STORE_R2_KEY);
-  if (!cronStoreObject) {
-    console.log('[CRON] No cron store found in R2, skipping');
-    return;
-  }
-
-  const cronStoreJson = await cronStoreObject.text();
+  // Sleep モード: 起こす理由がある場合のみコンテナを起動する
+  const nowMs = Date.now();
   const leadMinutes = parseInt(env.CRON_WAKE_AHEAD_MINUTES || '', 10);
   const leadTimeMs = leadMinutes > 0 ? leadMinutes * 60 * 1000 : DEFAULT_LEAD_TIME_MS;
-  const nowMs = Date.now();
 
-  const earliestRun = shouldWakeContainer(cronStoreJson, nowMs, leadTimeMs);
-  if (!earliestRun) {
-    console.log('[CRON] No upcoming cron jobs within lead time, skipping wake');
+  // Determine if wake is needed: pending autonomous tasks OR upcoming OpenClaw cron job
+  const [taskQueueObj, cronStoreObject] = await Promise.all([
+    env.BACKUP_BUCKET.get(TASK_QUEUE_KEY),
+    env.BACKUP_BUCKET.get(CRON_STORE_R2_KEY),
+  ]);
+
+  const hasPendingTasks = taskQueueObj !== null;
+
+  let earliestCronRun: number | null = null;
+  if (cronStoreObject) {
+    earliestCronRun = shouldWakeContainer(await cronStoreObject.text(), nowMs, leadTimeMs);
+  }
+
+  if (!hasPendingTasks && !earliestCronRun) {
+    console.log('[CRON] sleep mode: nothing pending, skipping wake');
     return;
   }
 
-  const deltaMinutes = ((earliestRun - nowMs) / 60_000).toFixed(1);
-  console.log(`[CRON] Cron job due in ${deltaMinutes}m, waking container`);
+  if (hasPendingTasks) {
+    console.log('[CRON] sleep mode: pending tasks found, waking container');
+  } else {
+    const deltaMinutes = ((earliestCronRun! - nowMs) / 60_000).toFixed(1);
+    console.log(`[CRON] sleep mode: cron job due in ${deltaMinutes}m, waking container`);
+  }
 
   await ensureGateway(sandbox, env);
   console.log('[CRON] Container woken successfully');
+
+  if (hasPendingTasks) {
+    await injectQueuedTasks(sandbox, env);
+  }
 }
