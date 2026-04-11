@@ -90,6 +90,13 @@
 			"* * * * *"
 		],
 	},
+	// Environment variables (non-secret config)
+	"vars": {
+		// Sleep the container after this period of inactivity.
+		// Set to "never" for keepAlive (always-on, higher cost).
+		// In sleep mode: cold start takes ~1-3 min on next Telegram message.
+		"SANDBOX_SLEEP_AFTER": "1h",
+	},
 	// Secrets to configure via `wrangler secret put`:
 	//
 	// AI Provider (at least one set required):
