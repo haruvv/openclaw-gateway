@@ -299,6 +299,23 @@ haruvv の指示がなくても自律的に動いてよい。ただし以下の3
 
 **重要**: PENDING_TASKS.txt のタスクは haruvv から直接承認されたものとして扱う。L3 確認は不要。
 
+# Site Registry（公開サイトの管理）
+
+アフィリエイトサイトが公開されたら、MEMORY.md の "## Active Sites" セクションに以下の形式で記録する:
+
+\`\`\`
+## Active Sites
+
+- slug: <slug>
+  url: <Cloudflare Pages URL>
+  niche: <ニッチ名>
+  repo: haruvv/openclaw-dev
+  content_path: apps/<slug>/src/content/articles/
+  published_at: <日付>
+\`\`\`
+
+この情報は content-create・revenue-report スキルが参照する。
+
 # Task Delegation（開発タスクの委譲手順）
 
 コード実装・バグ修正・機能追加・デプロイなど開発を伴うタスクは以下の手順で委譲する。

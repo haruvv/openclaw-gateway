@@ -95,22 +95,27 @@ haruvv が「はい」「進めて」「OK」などで応答したら:
 ## 概要
 <ニッチ名> をターゲットにしたアフィリエイトサイトを構築・デプロイする。
 
+## サイト情報
+- スラグ（ディレクトリ名）: <kebab-case-slug>（例: pet-goods-affiliate）
+- 作業場所: haruvv/openclaw-dev の apps/<slug>/ に新規作成
+
 ## 技術スタック
 - フレームワーク: Astro（静的生成）
-- ホスティング: Cloudflare Pages
-- コンテンツ管理: Markdown（Git 管理）
+- ホスティング: Cloudflare Pages（プロジェクト名: <slug>）
+- コンテンツ管理: Markdown（apps/<slug>/src/content/articles/）
 
 ## 要件
-- トップページ（サイト概要・人気記事一覧）
+- トップページ（サイト概要・記事一覧）
 - 記事ページ（Markdown からレンダリング）
-- アフィリエイトリンク挿入可能な構造
-- SEO 基本設定（メタタグ・OGP・sitemap.xml）
-- サンプル記事5件（各1000字以上）
+- アフィリエイトリンク挿入プレースホルダー付き記事構造
+- SEO 基本設定（title・description・OGP）
+- サンプル記事5件（各1000字以上、ニッチに沿った内容）
 
 ## 完成基準
-- `npx wrangler pages deploy` でデプロイ成功
+- `npx wrangler pages deploy dist/ --project-name <slug>` でデプロイ成功
 - トップページ・記事ページが表示される
 - デプロイ URL を Issue にコメント
+- apps/<slug>/ が main ブランチにプッシュ済み
 
 ## ラベル
 ai-dev

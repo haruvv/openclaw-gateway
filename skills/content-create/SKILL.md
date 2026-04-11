@@ -20,9 +20,19 @@ description: 公開済みアフィリエイトサイトに追加する記事を1
 まず `~/clawd/MEMORY.md` を読み、以下の情報を確認する:
 
 ```
-- アクティブなサイト URL とリポジトリ名
+- アクティブなサイトの URL・スラグ（例: pet-goods-affiliate）
 - サイトのニッチ・テーマ
 - 既存記事のタイトル一覧（重複を避けるため）
+```
+
+サイト情報は Phase 2 完了後に MEMORY.md に記録される（例）:
+```
+## Active Sites
+- slug: pet-goods-affiliate
+  url: https://pet-goods-affiliate.pages.dev
+  niche: ペット用品
+  repo: haruvv/openclaw-dev
+  content_path: apps/pet-goods-affiliate/src/content/articles/
 ```
 
 **アクティブなサイトが存在しない場合**: Telegram に「公開済みサイトがまだありません。monetize-research から始めてください。」と送信してスキップする。
@@ -109,19 +119,25 @@ haruvv が「公開して」「OK」「いいね」などで応答したら:
 ### Issue テンプレート
 
 ```
-タイトル: [コンテンツ] <記事タイトル> を <サイト名> に追加
+タイトル: [コンテンツ] <記事タイトル> を <サイトスラグ> に追加
 
 ## 概要
-以下の記事を <リポジトリ名> に追加し、Cloudflare Pages にデプロイする。
+以下の記事を haruvv/openclaw-dev の apps/<slug>/ に追加し、Cloudflare Pages にデプロイする。
+
+## 記事情報
+- 対象サイト: apps/<slug>/
+- ファイルパス: apps/<slug>/src/content/articles/<article-slug>.md
+- CF Pages プロジェクト名: <slug>
 
 ## 記事内容
 <記事本文（Markdown）>
 
 ## 作業内容
-1. `content/<slug>.md` として保存
-2. トップページの記事一覧に追加
-3. `npx wrangler pages deploy` でデプロイ
-4. デプロイ URL を Issue にコメント
+1. `apps/<slug>/src/content/articles/<article-slug>.md` として保存
+2. `npm run build` で確認
+3. `npx wrangler pages deploy dist/ --project-name <slug>` でデプロイ
+4. `git push origin main`
+5. デプロイ URL を Issue にコメント
 
 ## ラベル
 ai-dev
