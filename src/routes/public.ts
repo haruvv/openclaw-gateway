@@ -134,18 +134,29 @@ publicRoutes.post('/github-webhook', async (c) => {
     ['verify'],
   );
   const sigHex = signature.replace(/^sha256=/, '');
-  const sigBytes = new Uint8Array(sigHex.match(/../g)!.map(h => parseInt(h, 16)));
+  const hexParts = sigHex.match(/../g);
+  if (!hexParts) return c.json({ error: 'Invalid signature format' }, 401);
+  const sigBytes = new Uint8Array(hexParts.map(h => parseInt(h, 16)));
   const valid = await crypto.subtle.verify('HMAC', key, sigBytes, body);
   if (!valid) return c.json({ error: 'Invalid signature' }, 401);
 
   const event = c.req.header('X-GitHub-Event');
   if (event !== 'workflow_job') return c.json({ ok: true, skipped: 'not workflow_job' });
 
-  const payload = JSON.parse(new TextDecoder().decode(body));
-  const { action, workflow_job: job, repository } = payload;
+  let payload: Record<string, unknown>;
+  try {
+    payload = JSON.parse(new TextDecoder().decode(body));
+  } catch {
+    return c.json({ error: 'Invalid JSON payload' }, 400);
+  }
+  const { action, workflow_job: job, repository } = payload as {
+    action: string;
+    workflow_job: Record<string, unknown>;
+    repository: Record<string, unknown>;
+  };
 
-  // Only handle events from openclaw-dev
-  if (repository?.name !== 'openclaw-dev') return c.json({ ok: true, skipped: 'wrong repo' });
+  // Only handle events from haruvv/openclaw-dev (full_name で一致させる)
+  if (repository?.full_name !== 'haruvv/openclaw-dev') return c.json({ ok: true, skipped: 'wrong repo' });
 
   // Only handle the implement job
   if (job?.name !== 'implement') return c.json({ ok: true, skipped: 'not implement job' });
@@ -161,16 +172,8 @@ publicRoutes.post('/github-webhook', async (c) => {
 
   if (!text) return c.json({ ok: true, skipped: `action=${action} conclusion=${job?.conclusion}` });
 
-  const botToken = c.env.TELEGRAM_BOT_TOKEN;
-  const chatId = c.env.TELEGRAM_CHAT_ID;
-  if (!botToken || !chatId) return c.json({ error: 'Telegram not configured' }, 500);
-
-  await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ chat_id: chatId, text }),
-  });
-
+  // Telegram 通知はワークフロー側で直接送信するため Worker では何もしない
+  console.log('[WEBHOOK]', text.split('\n')[0]);
   return c.json({ ok: true });
 });
 
