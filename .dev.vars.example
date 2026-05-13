@@ -46,6 +46,11 @@ MOLTBOT_GATEWAY_TOKEN=dev-token-change-in-prod
 # OpenClaw モデル（省略時は zai/glm-5.1）
 # OPENCLAW_MODEL=zai/glm-5.1
 
+# RevenueAgentPlatform integration（任意）
+# RevenueAgentPlatform 側で REVENUE_AGENT_INTEGRATION_TOKEN を同じ値にする
+# REVENUE_AGENT_BASE_URL=http://localhost:3000
+# REVENUE_AGENT_INTEGRATION_TOKEN=shared-dev-token
+
 # CDP (Chrome DevTools Protocol) configuration for browser automation
 # CDP_SECRET=shared-secret-for-cdp-auth
 # WORKER_URL=https://your-worker.example.com

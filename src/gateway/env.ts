@@ -48,6 +48,8 @@ export function buildEnvVars(env: OpenClawEnv): Record<string, string> {
   if (env.TELEGRAM_CHAT_ID) envVars.TELEGRAM_CHAT_ID = env.TELEGRAM_CHAT_ID;
   if (env.SLACK_BOT_TOKEN) envVars.SLACK_BOT_TOKEN = env.SLACK_BOT_TOKEN;
   if (env.SLACK_APP_TOKEN) envVars.SLACK_APP_TOKEN = env.SLACK_APP_TOKEN;
+  if (env.DISCORD_BOT_TOKEN) envVars.DISCORD_BOT_TOKEN = env.DISCORD_BOT_TOKEN;
+  if (env.DISCORD_DM_POLICY) envVars.DISCORD_DM_POLICY = env.DISCORD_DM_POLICY;
   if (env.CF_AI_GATEWAY_MODEL) envVars.CF_AI_GATEWAY_MODEL = env.CF_AI_GATEWAY_MODEL;
   if (env.CDP_SECRET) envVars.CDP_SECRET = env.CDP_SECRET;
   if (env.WORKER_URL) envVars.WORKER_URL = env.WORKER_URL;
@@ -59,6 +61,11 @@ export function buildEnvVars(env: OpenClawEnv): Record<string, string> {
   if (env.DEV_TEAM_MCP_TOKEN) envVars.DEV_TEAM_MCP_TOKEN = env.DEV_TEAM_MCP_TOKEN;
   // Google Gemini
   if (env.GEMINI_API_KEY) envVars.GEMINI_API_KEY = env.GEMINI_API_KEY;
+  // RevenueAgentPlatform integration
+  if (env.REVENUE_AGENT_BASE_URL) envVars.REVENUE_AGENT_BASE_URL = env.REVENUE_AGENT_BASE_URL;
+  if (env.REVENUE_AGENT_INTEGRATION_TOKEN) {
+    envVars.REVENUE_AGENT_INTEGRATION_TOKEN = env.REVENUE_AGENT_INTEGRATION_TOKEN;
+  }
 
   // Note: R2 credentials are no longer passed to the container.
   // Persistence is handled by the Sandbox SDK's backup/restore API,

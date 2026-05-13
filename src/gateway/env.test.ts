@@ -138,6 +138,16 @@ describe('buildEnvVars', () => {
     expect(result.CF_AI_GATEWAY_MODEL).toBe('workers-ai/@cf/meta/llama-3.3-70b-instruct-fp8-fast');
   });
 
+  it('passes RevenueAgentPlatform integration env vars to container', () => {
+    const env = createMockEnv({
+      REVENUE_AGENT_BASE_URL: 'https://revenue-agent.example.com',
+      REVENUE_AGENT_INTEGRATION_TOKEN: 'shared-token',
+    });
+    const result = buildEnvVars(env);
+    expect(result.REVENUE_AGENT_BASE_URL).toBe('https://revenue-agent.example.com');
+    expect(result.REVENUE_AGENT_INTEGRATION_TOKEN).toBe('shared-token');
+  });
+
   it('combines all env vars correctly', () => {
     const env = createMockEnv({
       ANTHROPIC_API_KEY: 'sk-key',

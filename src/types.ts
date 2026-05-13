@@ -42,6 +42,9 @@ export interface OpenClawEnv {
   DEV_TEAM_MCP_TOKEN?: string; // Bearer token for dev-team MCP server auth
   // Google Gemini
   GEMINI_API_KEY?: string; // Google Gemini API key
+  // RevenueAgentPlatform integration
+  REVENUE_AGENT_BASE_URL?: string; // Base URL for RevenueAgentPlatform
+  REVENUE_AGENT_INTEGRATION_TOKEN?: string; // Bearer token for RevenueAgentPlatform
   // Cloudflare Access configuration for admin routes
   CF_ACCESS_TEAM_DOMAIN?: string; // e.g., 'myteam.cloudflareaccess.com'
   CF_ACCESS_AUD?: string; // Application Audience (AUD) tag
