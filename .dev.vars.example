@@ -43,6 +43,10 @@ MOLTBOT_GATEWAY_TOKEN=dev-token-change-in-prod
 # GitHub（必須）
 # GITHUB_PERSONAL_ACCESS_TOKEN=ghp_...    # Issue 起票に使用
 
+# dev-team MCP server（任意: dev-team Skill の task API 委譲に使用）
+# DEV_TEAM_MCP_URL=https://your-dev-team-worker.example.com/mcp
+# DEV_TEAM_MCP_TOKEN=shared-dev-team-token
+
 # OpenClaw モデル（省略時は zai/glm-5.1）
 # OPENCLAW_MODEL=zai/glm-5.1
 
