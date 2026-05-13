@@ -29,12 +29,21 @@ mkdir -p "$CONFIG_DIR"
 # ~/.openclaw/.env に env var を書き込む
 # OpenClaw をサービスとして実行する場合、exec サブプロセスに env var が引き継がれない。
 # ~/.openclaw/.env に書くことで exec から参照できるようになる（公式ドキュメントの解決策）。
-if [ -n "$GITHUB_PERSONAL_ACCESS_TOKEN" ]; then
-    # 既存の値を上書きしないよう一旦削除してから追記
-    sed -i '/^GITHUB_PERSONAL_ACCESS_TOKEN=/d' "$CONFIG_DIR/.env" 2>/dev/null || true
-    echo "GITHUB_PERSONAL_ACCESS_TOKEN=$GITHUB_PERSONAL_ACCESS_TOKEN" >> "$CONFIG_DIR/.env"
-    echo "GitHub token written to ~/.openclaw/.env"
-fi
+write_openclaw_env() {
+    local name="$1"
+    local value="$2"
+    local label="$3"
+
+    if [ -n "$value" ]; then
+        sed -i "/^${name}=/d" "$CONFIG_DIR/.env" 2>/dev/null || true
+        printf '%s=%s\n' "$name" "$value" >> "$CONFIG_DIR/.env"
+        echo "$label written to ~/.openclaw/.env"
+    fi
+}
+
+write_openclaw_env "GITHUB_PERSONAL_ACCESS_TOKEN" "$GITHUB_PERSONAL_ACCESS_TOKEN" "GitHub token"
+write_openclaw_env "REVENUE_AGENT_BASE_URL" "$REVENUE_AGENT_BASE_URL" "Revenue agent base URL"
+write_openclaw_env "REVENUE_AGENT_INTEGRATION_TOKEN" "$REVENUE_AGENT_INTEGRATION_TOKEN" "Revenue agent integration token"
 
 # ============================================================
 # ONBOARD (only if no config exists yet)

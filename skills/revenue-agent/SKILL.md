@@ -31,6 +31,10 @@ Run the RevenueAgentPlatform pipeline as one business action.
 Call RevenueAgentPlatform with the user's target URL:
 
 ```bash
+set -a
+[ -f "$HOME/.openclaw/.env" ] && . "$HOME/.openclaw/.env"
+set +a
+
 curl -sS "$REVENUE_AGENT_BASE_URL/api/revenue-agent/run" \
   -H "Authorization: Bearer $REVENUE_AGENT_INTEGRATION_TOKEN" \
   -H "Content-Type: application/json" \
