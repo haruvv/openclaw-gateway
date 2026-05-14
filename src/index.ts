@@ -178,6 +178,7 @@ const PUBLIC_PATHS = new Set([
   '/logo-small.png',
   '/api/status',
   '/api/gateway/restart',
+  '/api/revenue-agent/verify',
   '/github-webhook',
   '/telegram',
 ]);

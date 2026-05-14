@@ -12,6 +12,23 @@ import { restoreIfNeeded, signalRestoreNeeded } from '../persistence';
  */
 const publicRoutes = new Hono<AppEnv>();
 
+function shellSingleQuote(value: string): string {
+  return `'${value.replace(/'/g, `'\\''`)}'`;
+}
+
+function verifyGatewayToken(c: {
+  env: AppEnv['Bindings'];
+  req: { header: (name: string) => string | undefined };
+}): Response | null {
+  const token = c.env.MOLTBOT_GATEWAY_TOKEN;
+  if (!token) return Response.json({ error: 'Gateway token not configured' }, { status: 500 });
+
+  const auth = c.req.header('Authorization');
+  if (auth !== `Bearer ${token}`) return Response.json({ error: 'Unauthorized' }, { status: 401 });
+
+  return null;
+}
+
 // GET /sandbox-health - Health check endpoint
 publicRoutes.get('/sandbox-health', (c) => {
   return c.json({
@@ -96,17 +113,146 @@ publicRoutes.get('/_admin/assets/*', async (c) => {
 
 // POST /api/gateway/restart - Gateway restart (authenticated by MOLTBOT_GATEWAY_TOKEN, no CF Access required)
 publicRoutes.post('/api/gateway/restart', async (c) => {
-  const token = c.env.MOLTBOT_GATEWAY_TOKEN;
-  if (!token) return c.json({ error: 'Gateway token not configured' }, 500);
-
-  const auth = c.req.header('Authorization');
-  if (auth !== `Bearer ${token}`) return c.json({ error: 'Unauthorized' }, 401);
+  const authError = verifyGatewayToken(c);
+  if (authError) return authError;
 
   const sandbox = c.get('sandbox');
   try {
     await killGateway(sandbox);
     await signalRestoreNeeded(c.env.BACKUP_BUCKET);
     return c.json({ success: true, message: 'Gateway killed, will restart on next request' });
+  } catch (err) {
+    return c.json({ error: err instanceof Error ? err.message : 'Unknown error' }, 500);
+  }
+});
+
+// POST /api/revenue-agent/verify - Smoke test from the OpenClaw container to RevenueAgentPlatform.
+// Authenticated by MOLTBOT_GATEWAY_TOKEN. The response intentionally excludes secrets.
+publicRoutes.post('/api/revenue-agent/verify', async (c) => {
+  const authError = verifyGatewayToken(c);
+  if (authError) return authError;
+
+  const body = await c.req.json().catch(() => ({}));
+  const requestedUrl = typeof body?.url === 'string' ? body.url : 'https://example.com';
+  const mode = body?.mode === 'run' || body?.mode === 'health' ? body.mode : 'auth-check';
+
+  let targetUrl: string;
+  try {
+    const parsed = new URL(requestedUrl);
+    if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
+      return c.json({ error: 'url must use http or https' }, 400);
+    }
+    targetUrl = parsed.toString();
+  } catch {
+    return c.json({ error: 'Invalid url' }, 400);
+  }
+
+  const sandbox = c.get('sandbox');
+
+  const script = `
+(async () => {
+  const base = process.env.REVENUE_AGENT_BASE_URL;
+  const token = process.env.REVENUE_AGENT_INTEGRATION_TOKEN;
+  if (!base) throw new Error('REVENUE_AGENT_BASE_URL missing');
+  if (!token) throw new Error('REVENUE_AGENT_INTEGRATION_TOKEN missing');
+
+  const mode = ${JSON.stringify(mode)};
+  const endpoint = mode === 'health' ? '/health' : '/api/revenue-agent/run';
+  const expectedValidationStatus = mode === 'auth-check';
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 60_000);
+  const response = await fetch(new URL(endpoint, base).toString(), {
+    method: mode === 'health' ? 'GET' : 'POST',
+    signal: controller.signal,
+    headers: mode === 'health'
+      ? undefined
+      : {
+          Authorization: 'Bearer ' + token,
+          'Content-Type': 'application/json',
+        },
+    body: mode === 'health'
+      ? undefined
+      : JSON.stringify({
+          url: expectedValidationStatus ? 'not-a-url' : ${JSON.stringify(targetUrl)},
+          sendEmail: false,
+          sendTelegram: false,
+          createPaymentLink: false,
+        }),
+  });
+  clearTimeout(timeout);
+
+  const text = await response.text();
+  let payload;
+  try {
+    payload = JSON.parse(text);
+  } catch {
+    payload = { raw: text.slice(0, 1000) };
+  }
+
+  const sanitized = {
+    mode,
+    httpStatus: response.status,
+    status: payload.status,
+    error: payload.error,
+    targetUrl: payload.targetUrl,
+    steps: Array.isArray(payload.steps)
+      ? payload.steps.map((step) => ({
+          name: step.name,
+          status: step.status,
+          error: step.error,
+        }))
+      : undefined,
+    outputs: payload.outputs
+      ? {
+          domain: payload.outputs.domain,
+          seoScore: payload.outputs.seoScore,
+          proposalPath: payload.outputs.proposalPath,
+          paymentLinkUrlPresent: Boolean(payload.outputs.paymentLinkUrl),
+        }
+      : undefined,
+  };
+
+  console.log(JSON.stringify(sanitized));
+  if (mode === 'auth-check') {
+    if (response.status === 401 || response.status === 403 || response.status >= 500) process.exit(1);
+  } else if (!response.ok) {
+    process.exit(1);
+  }
+})().catch((err) => {
+  console.error(err instanceof Error ? err.message : String(err));
+  process.exit(1);
+});
+`;
+
+  try {
+    const result = await sandbox.exec(`node -e ${shellSingleQuote(script)}`, {
+      timeout: 90_000,
+      env: {
+        REVENUE_AGENT_BASE_URL: c.env.REVENUE_AGENT_BASE_URL,
+        REVENUE_AGENT_INTEGRATION_TOKEN: c.env.REVENUE_AGENT_INTEGRATION_TOKEN,
+      },
+    });
+    const stdout = result.stdout?.trim() ?? '';
+    let verification: unknown = stdout;
+    try {
+      verification = JSON.parse(stdout);
+    } catch {
+      // keep sanitized stdout as-is
+    }
+
+    if (result.exitCode !== 0) {
+      return c.json(
+        {
+          success: false,
+          exitCode: result.exitCode,
+          result: verification,
+          stderr: result.stderr?.slice(0, 1000),
+        },
+        502,
+      );
+    }
+
+    return c.json({ success: true, result: verification });
   } catch (err) {
     return c.json({ error: err instanceof Error ? err.message : 'Unknown error' }, 500);
   }
