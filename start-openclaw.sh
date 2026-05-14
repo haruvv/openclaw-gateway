@@ -194,9 +194,10 @@ if (process.env.ZAI_API_KEY) {
     config.agents.defaults = config.agents.defaults || {};
     const fallbacks = [];
     if (process.env.GEMINI_API_KEY) fallbacks.push('google/gemini-2.5-flash');
+    const primaryModel = process.env.OPENCLAW_MODEL || 'zai/glm-4.5-flash';
     config.agents.defaults.model = fallbacks.length > 0
-        ? { primary: 'zai/glm-4.7', fallbacks }
-        : { primary: 'zai/glm-4.7' };
+        ? { primary: primaryModel, fallbacks }
+        : { primary: primaryModel };
 }
 
 // Telegram configuration
