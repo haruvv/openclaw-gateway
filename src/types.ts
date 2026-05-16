@@ -45,6 +45,8 @@ export interface OpenClawEnv {
   // RevenueAgentPlatform integration
   REVENUE_AGENT_BASE_URL?: string; // Base URL for RevenueAgentPlatform
   REVENUE_AGENT_INTEGRATION_TOKEN?: string; // Bearer token for RevenueAgentPlatform
+  CLOUDFLARE_ACCESS_CLIENT_ID?: string; // Cloudflare Access Service Token client ID for RevenueAgentPlatform
+  CLOUDFLARE_ACCESS_CLIENT_SECRET?: string; // Cloudflare Access Service Token client secret for RevenueAgentPlatform
   // Cloudflare Access configuration for admin routes
   CF_ACCESS_TEAM_DOMAIN?: string; // e.g., 'myteam.cloudflareaccess.com'
   CF_ACCESS_AUD?: string; // Application Audience (AUD) tag

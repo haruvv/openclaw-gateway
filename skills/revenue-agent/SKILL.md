@@ -25,6 +25,8 @@ Run the RevenueAgentPlatform pipeline as one business action.
 
 - `REVENUE_AGENT_BASE_URL`: Base URL for RevenueAgentPlatform, for example `http://localhost:3000`.
 - `REVENUE_AGENT_INTEGRATION_TOKEN`: Shared bearer token expected by RevenueAgentPlatform.
+- `CLOUDFLARE_ACCESS_CLIENT_ID`: Cloudflare Access Service Token client ID for production RevenueAgentPlatform.
+- `CLOUDFLARE_ACCESS_CLIENT_SECRET`: Cloudflare Access Service Token client secret for production RevenueAgentPlatform.
 
 ## Invocation
 
@@ -36,6 +38,8 @@ set -a
 set +a
 
 curl -sS "$REVENUE_AGENT_BASE_URL/api/revenue-agent/run" \
+  -H "CF-Access-Client-Id: $CLOUDFLARE_ACCESS_CLIENT_ID" \
+  -H "CF-Access-Client-Secret: $CLOUDFLARE_ACCESS_CLIENT_SECRET" \
   -H "Authorization: Bearer $REVENUE_AGENT_INTEGRATION_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{

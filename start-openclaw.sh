@@ -44,6 +44,8 @@ write_openclaw_env() {
 write_openclaw_env "GITHUB_PERSONAL_ACCESS_TOKEN" "$GITHUB_PERSONAL_ACCESS_TOKEN" "GitHub token"
 write_openclaw_env "REVENUE_AGENT_BASE_URL" "$REVENUE_AGENT_BASE_URL" "Revenue agent base URL"
 write_openclaw_env "REVENUE_AGENT_INTEGRATION_TOKEN" "$REVENUE_AGENT_INTEGRATION_TOKEN" "Revenue agent integration token"
+write_openclaw_env "CLOUDFLARE_ACCESS_CLIENT_ID" "$CLOUDFLARE_ACCESS_CLIENT_ID" "Cloudflare Access client ID"
+write_openclaw_env "CLOUDFLARE_ACCESS_CLIENT_SECRET" "$CLOUDFLARE_ACCESS_CLIENT_SECRET" "Cloudflare Access client secret"
 
 # ============================================================
 # ONBOARD (only if no config exists yet)

@@ -142,10 +142,14 @@ describe('buildEnvVars', () => {
     const env = createMockEnv({
       REVENUE_AGENT_BASE_URL: 'https://revenue-agent.example.com',
       REVENUE_AGENT_INTEGRATION_TOKEN: 'shared-token',
+      CLOUDFLARE_ACCESS_CLIENT_ID: 'access-id',
+      CLOUDFLARE_ACCESS_CLIENT_SECRET: 'access-secret',
     });
     const result = buildEnvVars(env);
     expect(result.REVENUE_AGENT_BASE_URL).toBe('https://revenue-agent.example.com');
     expect(result.REVENUE_AGENT_INTEGRATION_TOKEN).toBe('shared-token');
+    expect(result.CLOUDFLARE_ACCESS_CLIENT_ID).toBe('access-id');
+    expect(result.CLOUDFLARE_ACCESS_CLIENT_SECRET).toBe('access-secret');
   });
 
   it('combines all env vars correctly', () => {

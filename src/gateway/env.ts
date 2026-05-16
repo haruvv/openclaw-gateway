@@ -66,6 +66,12 @@ export function buildEnvVars(env: OpenClawEnv): Record<string, string> {
   if (env.REVENUE_AGENT_INTEGRATION_TOKEN) {
     envVars.REVENUE_AGENT_INTEGRATION_TOKEN = env.REVENUE_AGENT_INTEGRATION_TOKEN;
   }
+  if (env.CLOUDFLARE_ACCESS_CLIENT_ID) {
+    envVars.CLOUDFLARE_ACCESS_CLIENT_ID = env.CLOUDFLARE_ACCESS_CLIENT_ID;
+  }
+  if (env.CLOUDFLARE_ACCESS_CLIENT_SECRET) {
+    envVars.CLOUDFLARE_ACCESS_CLIENT_SECRET = env.CLOUDFLARE_ACCESS_CLIENT_SECRET;
+  }
 
   // Note: R2 credentials are no longer passed to the container.
   // Persistence is handled by the Sandbox SDK's backup/restore API,

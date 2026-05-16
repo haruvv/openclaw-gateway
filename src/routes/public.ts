@@ -29,6 +29,23 @@ function verifyGatewayToken(c: {
   return null;
 }
 
+function redactKnownSecrets(text: string, env: AppEnv['Bindings']): string {
+  const values = [
+    env.MOLTBOT_GATEWAY_TOKEN,
+    env.TELEGRAM_BOT_TOKEN,
+    env.REVENUE_AGENT_INTEGRATION_TOKEN,
+    env.ZAI_API_KEY,
+    env.GEMINI_API_KEY,
+    env.GITHUB_PERSONAL_ACCESS_TOKEN,
+  ].filter((value): value is string => typeof value === 'string' && value.length > 0);
+
+  let redacted = text;
+  for (const value of values) {
+    redacted = redacted.split(value).join('[REDACTED]');
+  }
+  return redacted;
+}
+
 // GET /sandbox-health - Health check endpoint
 publicRoutes.get('/sandbox-health', (c) => {
   return c.json({
@@ -126,6 +143,28 @@ publicRoutes.post('/api/gateway/restart', async (c) => {
   }
 });
 
+// GET /api/gateway/logs - Token-protected process logs for production diagnostics.
+publicRoutes.get('/api/gateway/logs', async (c) => {
+  const authError = verifyGatewayToken(c);
+  if (authError) return authError;
+
+  const sandbox = c.get('sandbox');
+  const process = await findExistingGatewayProcess(sandbox);
+  if (!process) return c.json({ error: 'Gateway process not found' }, 404);
+
+  try {
+    const logs = await process.getLogs();
+    return c.json({
+      processId: process.id,
+      status: process.status,
+      stdout: redactKnownSecrets(logs.stdout ?? '', c.env).slice(-8000),
+      stderr: redactKnownSecrets(logs.stderr ?? '', c.env).slice(-8000),
+    });
+  } catch (err) {
+    return c.json({ error: err instanceof Error ? err.message : 'Unknown error' }, 500);
+  }
+});
+
 // POST /api/revenue-agent/verify - Smoke test from the OpenClaw container to RevenueAgentPlatform.
 // Authenticated by MOLTBOT_GATEWAY_TOKEN. The response intentionally excludes secrets.
 publicRoutes.post('/api/revenue-agent/verify', async (c) => {
@@ -153,6 +192,8 @@ publicRoutes.post('/api/revenue-agent/verify', async (c) => {
 (async () => {
   const base = process.env.REVENUE_AGENT_BASE_URL;
   const token = process.env.REVENUE_AGENT_INTEGRATION_TOKEN;
+  const accessClientId = process.env.CLOUDFLARE_ACCESS_CLIENT_ID;
+  const accessClientSecret = process.env.CLOUDFLARE_ACCESS_CLIENT_SECRET;
   if (!base) throw new Error('REVENUE_AGENT_BASE_URL missing');
   if (!token) throw new Error('REVENUE_AGENT_INTEGRATION_TOKEN missing');
 
@@ -167,6 +208,12 @@ publicRoutes.post('/api/revenue-agent/verify', async (c) => {
     headers: mode === 'health'
       ? undefined
       : {
+          ...(accessClientId && accessClientSecret
+            ? {
+                'CF-Access-Client-Id': accessClientId,
+                'CF-Access-Client-Secret': accessClientSecret,
+              }
+            : {}),
           Authorization: 'Bearer ' + token,
           'Content-Type': 'application/json',
         },
@@ -230,6 +277,8 @@ publicRoutes.post('/api/revenue-agent/verify', async (c) => {
       env: {
         REVENUE_AGENT_BASE_URL: c.env.REVENUE_AGENT_BASE_URL,
         REVENUE_AGENT_INTEGRATION_TOKEN: c.env.REVENUE_AGENT_INTEGRATION_TOKEN,
+        CLOUDFLARE_ACCESS_CLIENT_ID: c.env.CLOUDFLARE_ACCESS_CLIENT_ID,
+        CLOUDFLARE_ACCESS_CLIENT_SECRET: c.env.CLOUDFLARE_ACCESS_CLIENT_SECRET,
       },
     });
     const stdout = result.stdout?.trim() ?? '';
